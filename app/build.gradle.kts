@@ -55,12 +55,18 @@ android {
         viewBinding = true
     }
 
+    // Stage 21 brain model asset configuration
+    aaptOptions {
+        noCompress += "bin"
+    }
+
     // Chaquopy Python configuration
     sourceSets {
         getByName("main") {
             python {
                 srcDirs += listOf("src/main/python")
             }
+            assets.srcDirs += listOf("src/main/assets")
         }
     }
 }
