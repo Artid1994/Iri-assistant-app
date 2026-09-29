@@ -64,8 +64,8 @@ android {
 
     // ── 16KB ELF page alignment post-processing for Android 15 ──────────────────
     // Chaquopy prebuilt .so files ship with 4KB (0x1000) p_align; Android 15
-    // arm64 kernel requires 16KB (0x4000). This task patches every .so before
-    // APK packaging.
+    // arm64 kernel requires 16KB (0x4000). This task patches every .so after
+    // native lib merging and before APK packaging.
     tasks.register("patchNativeLibsFor16KB") {
         description = "Patch native .so ELF p_align to 0x4000 (16KB) for Android 15"
         group = "build"
@@ -73,26 +73,51 @@ android {
             val script = file("${project.rootDir}/android/scripts/patch_so_16kb.py")
             if (!script.exists())
                 throw GradleException("patch_so_16kb.py missing: ${script.absolutePath}")
-            val dirs = listOf(
-                file("${project.buildDir}/intermediates/merged_native_libs/debug/out/lib/arm64-v8a"),
-                file("${project.projectDir}/src/main/assets/chaquopy/bootstrap-native/arm64-v8a"),
-                file("${project.projectDir}/src/main/assets/chaquopy/bootstrap-native/arm64-v8a/java")
-            )
-            for (d in dirs) {
-                if (!d.exists()) { println("skip dir: ${d}"); continue }
-                val files = d.listFiles { it.extension == "so" } ?: emptyList()
-                if (files.isEmpty()) { println("no .so in: ${d}"); continue }
-                println("patching ${files.size} .so in ${d}")
-                for (f in files) {
-                    val r = exec {
-                        commandLine("python3", script.absolutePath, f.absolutePath)
-                        standardOutput = System.out
-                        errorOutput = System.err
+            // Recursively scan build/intermediates for all .so files
+            val intermediatesDir = file("${project.buildDir}/intermediates")
+            if (!intermediatesDir.exists()) {
+                println("warn: intermediates dir missing: ${intermediatesDir}")
+            } else {
+                val soFiles = intermediatesDir.walkTopDown()
+                    .filter { it.isFile && it.extension == "so" }
+                    .toList()
+                if (soFiles.isNotEmpty()) {
+                    println("patching ${soFiles.size} .so files under build/intermediates/")
+                    for (f in soFiles) {
+                        val r = exec {
+                            commandLine("python3", script.absolutePath, f.absolutePath)
+                            standardOutput = System.out
+                            errorOutput = System.err
+                        }
+                        if (r.exitValue != 0) throw GradleException("patch failed: ${f.name}")
                     }
-                    if (r.exitValue != 0) throw GradleException("patch failed: ${f.name}")
+                } else {
+                    println("no .so files found under build/intermediates/")
+                }
+            }
+            // Also patch Chaquopy assets dir if it exists in project sources
+            val chaquopyAssetsDir = file("${project.projectDir}/src/main/assets/chaquopy")
+            if (chaquopyAssetsDir.exists()) {
+                val assetSoFiles = chaquopyAssetsDir.walkTopDown()
+                    .filter { it.isFile && it.extension == "so" }
+                    .toList()
+                if (assetSoFiles.isNotEmpty()) {
+                    println("patching ${assetSoFiles.size} .so files under assets/chaquopy/")
+                    for (f in assetSoFiles) {
+                        val r = exec {
+                            commandLine("python3", script.absolutePath, f.absolutePath)
+                            standardOutput = System.out
+                            errorOutput = System.err
+                        }
+                        if (r.exitValue != 0) throw GradleException("patch failed: ${f.name}")
+                    }
                 }
             }
         }
+    }
+    // Hook AFTER merge tasks AND BEFORE package tasks for correct timing
+    tasks.matching { it.name.contains("merge") && it.name.contains("JniLibFolders") }.configureEach {
+        finalizedBy("patchNativeLibsFor16KB")
     }
     tasks.named("packageDebug").configure { dependsOn("patchNativeLibsFor16KB") }
     tasks.named("packageRelease").configure { dependsOn("patchNativeLibsFor16KB") }
