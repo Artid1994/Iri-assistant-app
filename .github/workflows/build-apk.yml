@@ -90,6 +90,7 @@ jobs:
       - name: Zipalign patched APK
         working-directory: android
         run: |
+          export PATH="$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | tail -1):$PATH"
           APK=$(ls app/build/outputs/apk/debug/*.apk | head -1)
           echo "Zipaligning: $APK"
           zipalign -v -p 4 "$APK" app-debug-aligned.apk
@@ -99,6 +100,7 @@ jobs:
       - name: Sign patched APK
         working-directory: android
         run: |
+          export PATH="$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | tail -1):$PATH"
           APK=$(ls app/build/outputs/apk/debug/*.apk | head -1)
           echo "Signing: $APK"
           apksigner sign \
