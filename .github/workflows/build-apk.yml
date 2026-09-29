@@ -225,6 +225,36 @@ jobs:
             fi
           fi
 
+          # Pattern 5: Java heap space -> increase JVM args in gradle.properties
+          if echo "$FAILURE_SIGNATURE" | grep -q "Java heap space\|OutOfMemoryError\|heap space"; then
+            echo "Pattern matched: Java heap space / OOM"
+            echo "Searching for JVM args configuration..."
+            if [ -f android/gradle.properties ]; then
+              if grep -q "org.gradle.jvmargs" android/gradle.properties 2>/dev/null; then
+                echo "RESOLUTION FOUND: org.gradle.jvmargs already configured."
+                # Extract current Xmx value
+                CURRENT_XMX=$(grep "org.gradle.jvmargs" android/gradle.properties | grep -oP '\-Xmx\d+m' | head -1)
+                echo "Current Xmx: $CURRENT_XMX"
+                # If less than 2048m, upgrade
+                if echo "$CURRENT_XMX" | grep -qE "\-Xmx[0-9]+m"; then
+                  CURRENT_NUM=$(echo "$CURRENT_XMX" | grep -oP '\d+' | head -1)
+                  if [ "$CURRENT_NUM" -lt 2048 ]; then
+                    echo "Upgrading Xmx from ${CURRENT_NUM}m to 2048m"
+                    sed -i "s/-Xmx${CURRENT_NUM}m/-Xmx2048m/g" android/gradle.properties
+                    echo "Fix applied: increased JVM heap to 2048m"
+                  fi
+                fi
+              else
+                echo "Applying fix: add org.gradle.jvmargs to gradle.properties"
+                echo "" >> android/gradle.properties
+                echo "org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError" >> android/gradle.properties
+                echo "Fix applied: JVM heap increased to 2048m"
+              fi
+            else
+              echo "WARNING: android/gradle.properties not found. Cannot apply heap fix."
+            fi
+          fi
+
           # ------------------------------------------------------------------
           # STEP 4: If any fix was applied, commit and push to retrigger
           # ------------------------------------------------------------------
