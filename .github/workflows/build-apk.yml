@@ -87,6 +87,30 @@ jobs:
           echo "=== APK repacked with patched .so files ==="
           ls -la "$APK"
 
+      - name: Zipalign patched APK
+        working-directory: android
+        run: |
+          APK=$(ls app/build/outputs/apk/debug/*.apk | head -1)
+          echo "Zipaligning: $APK"
+          zipalign -v -p 4 "$APK" app-debug-aligned.apk
+          mv app-debug-aligned.apk "$APK"
+          echo "Zipaligned APK: $APK"
+
+      - name: Sign patched APK
+        working-directory: android
+        run: |
+          APK=$(ls app/build/outputs/apk/debug/*.apk | head -1)
+          echo "Signing: $APK"
+          apksigner sign \
+            --ks $ANDROID_HOME/debug.keystore \
+            --ks-pass pass:android \
+            --key-pass pass:android \
+            --out app-debug-signed.apk \
+            "$APK"
+          mv app-debug-signed.apk "$APK"
+          echo "Signed APK: $APK"
+          apksigner verify --verbose "$APK"
+
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
