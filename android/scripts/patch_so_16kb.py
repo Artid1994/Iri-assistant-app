@@ -2,14 +2,23 @@
 """
 Patch ELF64 .so files: set p_align of PT_LOAD segments to 0x4000 (16KB).
 Uses CORRECT offset: p_align is at ph_off + 48 in Elf64_Phdr.
+e_phentsize = 56 bytes stride per program header.
+Iterates over ALL PT_LOAD segments (p_type == 1) — no index skipped.
+
+Modes:
+  file:  patch_so_16kb.py <file1.so> [file2.so ...]
+  dir:   patch_so_16kb.py --recursive <directory>
+         Recursively walks directory tree for *.so files.
 """
 import struct, sys, os
 
 PT_LOAD = 1
 ELFCLASS64 = 2
 ELFDATA2LSB = 1
+NEW_ALIGN = 0x4000  # 16KB page size for Android 15 arm64
 
-def patch_so(path, new_align=0x4000):
+
+def patch_so(path, new_align=NEW_ALIGN):
     if not os.path.isfile(path):
         print(f"SKIP (not file): {path}")
         return False
@@ -58,16 +67,39 @@ def patch_so(path, new_align=0x4000):
 def main():
     if len(sys.argv) < 2:
         print(f"Usage: {sys.argv[0]} <file.so> [...]")
+        print(f"       {sys.argv[0]} --recursive <directory>")
         sys.exit(1)
-    ok = fail = 0
-    for p in sys.argv[1:]:
-        print(f"[{os.path.basename(p)}]")
-        if patch_so(p):
-            ok += 1
-        else:
-            fail += 1
-    print(f"\nDone: {ok} ok, {fail} skipped")
-    sys.exit(0 if fail == 0 else 1)
+
+    if sys.argv[1] == "--recursive":
+        if len(sys.argv) < 3:
+            print("Error: --recursive requires a directory argument")
+            sys.exit(1)
+        d = sys.argv[2]
+        if not os.path.isdir(d):
+            print(f"Error: {d} is not a directory")
+            sys.exit(1)
+        ok = fail = 0
+        for root, dirs, files in os.walk(d):
+            for fname in files:
+                if fname.endswith(".so"):
+                    path = os.path.join(root, fname)
+                    print(f"[{path}]")
+                    if patch_so(path):
+                        ok += 1
+                    else:
+                        fail += 1
+        print(f"\nDone: {ok} ok, {fail} failed")
+        sys.exit(0 if fail == 0 else 1)
+    else:
+        ok = fail = 0
+        for p in sys.argv[1:]:
+            print(f"[{os.path.basename(p)}]")
+            if patch_so(p):
+                ok += 1
+            else:
+                fail += 1
+        print(f"\nDone: {ok} ok, {fail} failed")
+        sys.exit(0 if fail == 0 else 1)
 
 if __name__ == "__main__":
     main()

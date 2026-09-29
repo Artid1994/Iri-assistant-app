@@ -56,6 +56,37 @@ jobs:
         working-directory: android
         run: ./gradlew :app:assembleDebug --no-daemon --no-build-cache --stacktrace --info
 
+      - name: Patch all .so binaries to 16KB alignment
+        working-directory: android
+        run: |
+          echo "=== Unpacking APK ==="
+          APK_DIR="tmp_apk_patch"
+          APK=$(ls app/build/outputs/apk/debug/*.apk | head -1)
+          echo "APK: $APK"
+          mkdir -p "$APK_DIR"
+          unzip -o "$APK" -d "$APK_DIR"
+
+          echo "=== Patching all .so files ==="
+          python3 android/scripts/patch_so_16kb.py --recursive "$APK_DIR"
+
+          echo "=== Verifying p_align = 0x4000 on all patched .so files ==="
+          find "$APK_DIR" -name "*.so" -type f | while read so; do
+            echo "--- $(basename $so) ---"
+            readelf -Wl "$so" 2>&1 | grep -E "LOAD|Align" | head -4
+          done
+
+          echo "=== Repacking APK ==="
+          # Remove old APK, create new one from patched contents
+          rm -f "$APK"
+          cd "$APK_DIR"
+          zip -r -y "../$APK_DIR.zip" . 2>/dev/null || zip -r "../$APK_DIR.zip" .
+          cd ..
+          mv "$APK_DIR.zip" "$APK"
+          rm -rf "$APK_DIR"
+
+          echo "=== APK repacked with patched .so files ==="
+          ls -la "$APK"
+
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
