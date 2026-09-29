@@ -70,7 +70,7 @@ android {
     // NDK external build configuration for JNI library
     externalNativeBuild {
         cmake {
-            path = file("CMakeLists.txt")
+            path = file("../android/CMakeLists.txt")
             // Pass 16KB page size flags to CMake for Android 15 compatibility
             arguments += listOf(
                 "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON",
