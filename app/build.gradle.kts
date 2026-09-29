@@ -62,7 +62,41 @@ android {
         }
     }
 
-    // Stage 21 brain model asset configuration
+    // ── 16KB ELF page alignment post-processing for Android 15 ──────────────────
+    // Chaquopy prebuilt .so files ship with 4KB (0x1000) p_align; Android 15
+    // arm64 kernel requires 16KB (0x4000). This task patches every .so before
+    // APK packaging.
+    tasks.register("patchNativeLibsFor16KB") {
+        description = "Patch native .so ELF p_align to 0x4000 (16KB) for Android 15"
+        group = "build"
+        doLast {
+            val script = file("${project.rootDir}/android/scripts/patch_so_16kb.py")
+            if (!script.exists())
+                throw GradleException("patch_so_16kb.py missing: ${script.absolutePath}")
+            val dirs = listOf(
+                file("${project.buildDir}/intermediates/merged_native_libs/debug/out/lib/arm64-v8a"),
+                file("${project.projectDir}/src/main/assets/chaquopy/bootstrap-native/arm64-v8a"),
+                file("${project.projectDir}/src/main/assets/chaquopy/bootstrap-native/arm64-v8a/java")
+            )
+            for (d in dirs) {
+                if (!d.exists()) { println("skip dir: ${d}"); continue }
+                val files = d.listFiles { it.extension == "so" } ?: emptyList()
+                if (files.isEmpty()) { println("no .so in: ${d}"); continue }
+                println("patching ${files.size} .so in ${d}")
+                for (f in files) {
+                    val r = exec {
+                        commandLine("python3", script.absolutePath, f.absolutePath)
+                        standardOutput = System.out
+                        errorOutput = System.err
+                    }
+                    if (r.exitValue != 0) throw GradleException("patch failed: ${f.name}")
+                }
+            }
+        }
+    }
+    tasks.named("packageDebug").configure { dependsOn("patchNativeLibsFor16KB") }
+    tasks.named("packageRelease").configure { dependsOn("patchNativeLibsFor16KB") }
+
     aaptOptions {
         noCompress += listOf("bin", "onnx", "tflite", "zip")
     }
