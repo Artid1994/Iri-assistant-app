@@ -1,0 +1,19 @@
+# Additional strings for Android Accessibility Bridge
+<resources>
+    <string name="accessibility_service_description">
+        JARVIS AE01M Accessibility Bridge — captures system events for HDC cognitive context.
+        Required for battery monitoring, notification capture, and app state tracking.
+    </string>
+    <string name="accessibility_enable_prompt">
+        JARVIS AE01M needs accessibility permissions to monitor system events.
+        Please enable "JARVIS AE01M Accessibility Bridge" in Settings.
+    </string>
+    <string name="sensory_permission_label">Sensory Input Access</string>
+    <string name="sensory_permission_desc">
+        Access accelerometer, gyroscope, and location sensors for environmental context.
+    </string>
+    <string name="battery_monitoring_label">Battery Monitoring</string>
+    <string name="battery_monitoring_desc">
+        Monitor battery level to trigger "battery_low" HDC context.
+    </string>
+</resources>

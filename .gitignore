@@ -1,0 +1,4 @@
+model/*.bin
+*.bin
+*.so
+__pycache__/

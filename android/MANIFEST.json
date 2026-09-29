@@ -1,0 +1,56 @@
+{
+  "name": "stage21_android_integration_bridge",
+  "version": "1.0.0",
+  "description": "Android Integration Bridge linking Stage 21 SNN+HDC runtime with Android Accessibility/Sensory inputs",
+  "created": "2026-09-29",
+  "files": {
+    "android/README.md": {
+      "size": 1420,
+      "description": "Architecture overview and component documentation"
+    },
+    "android/CMakeLists.txt": {
+      "size": 903,
+      "description": "NDK native build configuration for libjari_bridge.so"
+    },
+    "android/chaquopy.gradle": {
+      "size": 562,
+      "description": "Chaquopy Python 3 runtime configuration"
+    },
+    "android/jni/src/jari_bridge.cpp": {
+      "size": 4993,
+      "description": "JNI native library implementing hypervector encode/decode/bundle/xor operations"
+    },
+    "android/src/main/python/hdc_memory_core.py": {
+      "size": 5554,
+      "description": "Python fallback HDC engine for Chaquopy runtime"
+    },
+    "android/src/main/java/com/jarvis/ae01m/bridge/AndroidAccessibilityBridge.kt": {
+      "size": 5070,
+      "description": "Accessibility service bridge for system event capture"
+    },
+    "android/src/main/res/xml/accessibility_service_config.xml": {
+      "size": 539,
+      "description": "Accessibility service configuration"
+    },
+    "android/src/main/res/values/strings.xml": {
+      "size": 961,
+      "description": "Accessibility and sensory permission strings"
+    }
+  },
+  "components": [
+    "JNI Native Library (libjari_bridge.so)",
+    "Chaquopy Python Runtime",
+    "AndroidAccessibilityBridge",
+    "Sensory Input Adapters"
+  ],
+  "build_deps": {
+    "ndk": "r27+",
+    "cmake": "3.22.0",
+    "chaquopy": "15.0.0",
+    "python": "3.8+"
+  },
+  "paths": {
+    "android_dir": "/home/artid1994/jarvis_brain/scaffold/stage21/android/",
+    "workflow_file": "/home/artid1994/jarvis_brain/scaffold/stage21/.github/workflows/build-apk.yml"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "experiment": "stage21_hdc_cognitive_integration",
+  "locked_at": "2026-09-29T18:11:22Z",
+  "branch": "LAB_ONLY",
+  "version": "1.0",
+  "pipeline": {
+    "sensory_bridge": "MobileSensoryBridge (Stage 20)",
+    "brain_model": "ThetaGammaOscillator (Model C, float32)",
+    "hdc_memory_core": "HdcCognitiveIntegrator (Stage 21)",
+    "action_decoder": "MobileActionDecoder (Stage 20)"
+  },
+  "simulation": {
+    "duration_sec": 10.0,
+    "steps": 10000,
+    "dt_ms": 1.0,
+    "model": "C (Theta-Gamma Oscillatory)",
+    "subnetwork_neurons": 5000
+  },
+  "metrics": {
+    "mean_vm_mv": 0.002944,
+    "firing_rate_hz": 0.0043,
+    "total_spikes": 217082,
+    "actions_decoded": 0,
+    "elapsed_seconds": 21.7
+  },
+  "hdc": {
+    "hv_dim": 10000,
+    "context_vectors": 21,
+    "action_vectors": 2,
+    "bindings": 2,
+    "bundles": 1,
+    "learned_rules": 2,
+    "rules": [
+      {"context": "battery_low", "action": "notify", "binding_key": "battery_low:notify"},
+      {"context": "app_in_background", "action": "speak", "binding_key": "app_in_background:speak"}
+    ]
+  },
+  "ram_gate": {
+    "limit_mb": 1000,
+    "peak_rss_mb": 38.06,
+    "status": "PASS"
+  },
+  "recall_accuracy": {
+    "battery_low_query": "PASS",
+    "app_in_background_query": "PASS",
+    "overall": "PASS"
+  },
+  "verification_status": "PASS",
+  "files": [
+    "/home/artid1994/jarvis_brain/scaffold/stage21/scripts/hdc_memory_core.py",
+    "/home/artid1994/jarvis_brain/scaffold/stage21/scripts/test_stage21_hdc_pipeline.py"
+  ]
+}

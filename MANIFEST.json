@@ -1,0 +1,64 @@
+{
+  "manifest_version": "1.0",
+  "stage": "stage21",
+  "branch": "LAB_ONLY",
+  "created_at": "2026-09-29T18:14:00Z",
+  "description": "HDC Cognitive Integration — Model artifacts, scripts, and benchmark consolidation",
+  "files": [
+    {
+      "path": "model/iri_brain_v6_1m_trained_phase1_phase2.bin",
+      "description": "Trained brain model checkpoint (Phase 1 + Phase 2)",
+      "source": "stage19/model/",
+      "size_bytes": 307999820,
+      "size_mb": 293.79,
+      "sha256": "e8ac7d8c2ec3bf8ebe1c9c3e5f300e5c46ff80c8d99c412937f650e98b6553ee"
+    },
+    {
+      "path": "scripts/mobile_sensory_bridge.py",
+      "description": "Stage 20 MobileSensoryBridge — 20K sensory neurons, event injection",
+      "size_bytes": 9621,
+      "sha256": "c85a5465a4dc252f481d8ce2562dcf355a2a29b8b6f19587f7f7d5387b04d599"
+    },
+    {
+      "path": "scripts/mobile_action_decoder.py",
+      "description": "Stage 20 MobileActionDecoder — 80K motor neurons, 14 action types",
+      "size_bytes": 11469,
+      "sha256": "4dd3bdd4a6b070d236f7b3071a35db62ea719d28f1d0f2b85e14ded1110e5b7a"
+    },
+    {
+      "path": "scripts/hdc_memory_core.py",
+      "description": "Stage 21 HDC Memory Core — 10K-dim bipolar hypervectors, XOR binding, bundling, cosine similarity retrieval",
+      "size_bytes": 23101,
+      "sha256": "8ece9fe153afaafd2bc4e1d4cf9ed8d776b5ed6e7dfffd9c52da00ae5acb763f"
+    },
+    {
+      "path": "scripts/test_stage21_hdc_pipeline.py",
+      "description": "Integration test: 10s simulation, RAM gate verification, HDC recall accuracy",
+      "size_bytes": 13102,
+      "sha256": "df4aa138fbbc205d53cf4a0f466558e4f278f05337f719c62715af4bcd8e922c"
+    },
+    {
+      "path": "results/locked_stage21_hdc_benchmark.json",
+      "description": "Locked baseline benchmark results",
+      "size_bytes": 1509,
+      "sha256": "1c42ed22ae45c7c9e305b56de12d7f7703aed0e6a613a82f78278b2fb6c1773f"
+    }
+  ],
+  "components": {
+    "sensory_bridge": "MobileSensoryBridge (Stage 20)",
+    "brain_model": "ThetaGammaOscillator (Model C, float32, 5000 neurons)",
+    "hdc_memory_core": "HdcCognitiveIntegrator (Stage 21, 10000-dim)",
+    "action_decoder": "MobileActionDecoder (Stage 20)"
+  },
+  "benchmark": {
+    "peak_rss_mb": 38.06,
+    "firing_rate_hz": 0.0043,
+    "total_spikes": 217082,
+    "simulation_duration_sec": 10.0,
+    "ram_gate": "PASS",
+    "recall_accuracy": "PASS"
+  },
+  "total_files": 6,
+  "total_size_mb": 293.82,
+  "verification_status": "PASS"
+}

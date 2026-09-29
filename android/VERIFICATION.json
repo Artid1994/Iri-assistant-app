@@ -1,0 +1,57 @@
+{
+  "task": "BUILD_ANDROID_EXPORT_SCAFFOLD_AND_GITHUB_CI",
+  "status": "VERIFIED",
+  "verification": {
+    "workflow_syntax": "PASS",
+    "yaml_valid": true,
+    "path_linkages": "PASS",
+    "all_paths_exist": true
+  },
+  "created_paths": {
+    "android_scaffold": "/home/artid1994/jarvis_brain/scaffold/stage21/android/",
+    "workflow": "/home/artid1994/jarvis_brain/scaffold/stage21/.github/workflows/build-apk.yml"
+  },
+  "android_bridge_files": [
+    "android/README.md",
+    "android/CMakeLists.txt",
+    "android/chaquopy.gradle",
+    "android/MANIFEST.json",
+    "android/jni/src/jari_bridge.cpp",
+    "android/src/main/python/hdc_memory_core.py",
+    "android/src/main/java/com/jarvis/ae01m/bridge/AccessibilityService.kt",
+    "android/src/main/java/com/jarvis/ae01m/bridge/AndroidAccessibilityBridge.kt",
+    "android/src/main/java/com/jarvis/ae01m/bridge/SensoryInputAdapter.kt",
+    "android/src/main/res/xml/accessibility_service_config.xml",
+    "android/src/main/res/values/strings.xml"
+  ],
+  "workflow_features": {
+    "jdk": "Temurin 17",
+    "android_sdk": "android-actions/setup-android@v3",
+    "gradle_cache": "gradle/actions/setup-gradle@v3",
+    "build_command": "./gradlew assembleDebug --no-daemon",
+    "artifact_upload": "app/build/outputs/apk/debug/app-debug.apk",
+    "keystore_support": "secrets.ANDROID_KEYSTORE_BASE64",
+    "timeout": "30 minutes",
+    "triggers": ["push:main", "push:master", "workflow_dispatch"]
+  },
+  "integration_points": {
+    "jni_library": "libjari_bridge.so (CMake + NDK r27+)",
+    "python_runtime": "Chaquopy 15.0.0 with numpy/scipy",
+    "accessibility": "BIND_ACCESSIBILITY_SERVICE + window/notification events",
+    "sensors": "accelerometer, gyroscope, location, battery"
+  },
+  "push_instructions": {
+    "step1": "cd /home/artid1994/jarvis_brain",
+    "step2": "git add scaffold/stage21/android/ scaffold/stage21/.github/workflows/build-apk.yml",
+    "step3": "git commit -m 'feat: add Android Integration Bridge and APK build workflow (Stage 21)'",
+    "step4": "git push origin main  # triggers APK build on GitHub Actions"
+  },
+  "notes": {
+    "branch": "LAB_ONLY",
+    "model_artifact": "scaffold/stage21/model/iri_brain_v6_1m_trained_phase1_phase2.bin (308 MB)",
+    "ndk_required": "r27+ for CMake 3.22.0",
+    "min_sdk": 24,
+    "compile_sdk": 34,
+    "target_sdk": 34
+  }
+}
