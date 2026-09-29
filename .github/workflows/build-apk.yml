@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android APK (Stage 21)
 
 on:
   push:
@@ -6,76 +6,49 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-apk:
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    env:
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+      KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Setup Java
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: 17
+          java-version: '17'
+          distribution: 'temurin'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Verify Android SDK
-        run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-          ls -la $ANDROID_HOME/platforms/ 2>/dev/null || echo "No platforms installed — SDKmanager will handle this"
-          ls -la $ANDROID_HOME/build-tools/ 2>/dev/null || echo "No build-tools installed"
-
-      - name: Cache Gradle
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: wrapper
 
-      - name: Decode keystore (if secrets provided)
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+      - name: Decode Keystore
+        if: ${{ env.HAS_KEYSTORE == 'true' }}
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > app/keystore.jks
-          echo "keystore.jks decoded"
+          echo "${{ env.KEYSTORE_BASE64 }}" | base64 -d > app/keystore.jks
+
+      - name: Grant Execute Permission for Gradlew
+        run: chmod +x android/gradlew || chmod +x gradlew
 
       - name: Build Debug APK
         run: |
-          chmod +x ./gradlew
-          ./gradlew assembleDebug \
-            --no-daemon \
-            --info \
-            -Dandroid.enableDebugMetrics=true
+          if [ -f "android/gradlew" ]; then
+            cd android && ./gradlew assembleDebug --no-daemon
+          else
+            ./gradlew assembleDebug --no-daemon
+          fi
 
-      - name: Upload Debug APK
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
-        if: success()
         with:
-          name: app-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 30
-          if-no-files-found: error
-
-      - name: Upload Release APK (if signed build)
-        uses: actions/upload-artifact@v4
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' && success() }}
-        with:
-          name: app-release-apk
-          path: app/build/outputs/apk/release/app-release.apk
-          retention-days: 30
-          if-no-files-found: error
-
-      - name: Upload mapping files (debug)
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: debug-mappings
+          name: app-debug
           path: |
-            app/build/outputs/mapping/debug/mapping.txt
-            app/build/outputs/mapping/debug/mapping.txt.gz
-          retention-days: 7
-          if-no-files-found: ignore
+            android/app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/debug/*.apk
+          retention-days: 30
