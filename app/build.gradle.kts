@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("com.chaquo.python") version "15.0.0"
 }
 
 android {
@@ -53,6 +54,25 @@ android {
     buildFeatures {
         viewBinding = true
     }
+
+    // Chaquopy Python configuration
+    sourceSets {
+        getByName("main") {
+            python {
+                srcDirs += listOf("src/main/python")
+            }
+        }
+    }
+}
+
+chaquopy {
+    // Python version for Chaquopy
+    pythonVersion = "3.8"
+    // Enable numpy for HDC hypervector math
+    pip {
+        install("numpy")
+        install("scipy")
+    }
 }
 
 dependencies {
@@ -67,6 +87,9 @@ dependencies {
 
     // HDC hypervector math helpers
     implementation("org.nd4j:nd4j-native-platform:1.0.0-M2.1")
+
+    // Kotlin Coroutines for async initialization
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

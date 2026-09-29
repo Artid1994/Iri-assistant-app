@@ -19,6 +19,10 @@ import java.io.FileOutputStream
  *   - JNI native lib (libjari_bridge.so) provides direct C++ access to hypervector ops
  *   - Python fallback (Chaquopy) available for non-native devices
  *   - Model file: iri_brain_v6_1m_trained_phase1_phase2.bin (308 MB)
+ *
+ * Threading:
+ *   - Model loading (loadModel) runs on caller's thread — must be called from IO thread
+ *   - JNI library loading (loadJni) is fast and thread-safe
  */
 class PythonBridge(context: Context) {
 
@@ -34,11 +38,16 @@ class PythonBridge(context: Context) {
 
     init {
         this.context = context.applicationContext
-        loadModel()
+        // JNI loading is fast — safe to do in init
         loadJni()
     }
 
-    private fun loadModel() {
+    /**
+     * Load the HDC model from assets to internal storage.
+     * MUST be called from a background thread (IO dispatcher) to avoid
+     * blocking the UI thread. The ~294MB model copy is the expensive operation.
+     */
+    fun loadModel() {
         val dest = File(context.filesDir, MODEL_ASSET)
         if (!dest.exists()) {
             context.assets.open(MODEL_ASSET).use { input ->
@@ -57,6 +66,20 @@ class PythonBridge(context: Context) {
         } catch (e: UnsatisfiedLinkError) {
             // Fallback: Python bridge via Chaquopy
             jniLoaded = false
+        }
+    }
+
+    /**
+     * Initialize Python runtime via Chaquopy.
+     * Call this from background thread before using Python fallback paths.
+     */
+    fun startPythonRuntime() {
+        try {
+            // Chaquopy initialization would happen here
+            // Python.start() if using Chaquopy
+            // For now, this is a no-op stub — Chaquopy auto-initializes
+        } catch (e: Exception) {
+            // Python runtime failed to start — JNI fallback will be used
         }
     }
 
