@@ -29,6 +29,14 @@ android {
                 }
             }
         }
+
+        // CMake arguments (per-variant, CmakeFlags DSL)
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON",
+                          "-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384"
+            }
+        }
     }
 
     buildTypes {
@@ -50,9 +58,7 @@ android {
     // NDK external build configuration for JNI library (libjari_bridge.so)
     externalNativeBuild {
         cmake {
-            path "CMakeLists.txt"
-            arguments "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
-            arguments "-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384"
+            path "../CMakeLists.txt"
         }
     }
 
@@ -65,10 +71,12 @@ android {
 }
 
 chaquopy {
-    pythonVersion "3.8"
-    pip {
-        install "numpy"
-        install "scipy"
+    defaultConfig {
+        version = "3.8"
+        pip {
+            install "numpy"
+            install "scipy"
+        }
     }
 }
 
