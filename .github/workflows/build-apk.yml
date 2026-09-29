@@ -67,7 +67,7 @@ jobs:
           unzip -o "$APK" -d "$APK_DIR"
 
           echo "=== Patching all .so files ==="
-          python3 android/scripts/patch_so_16kb.py --recursive "$APK_DIR"
+          python3 scripts/patch_so_16kb.py --recursive "$APK_DIR"
 
           echo "=== Verifying p_align = 0x4000 on all patched .so files ==="
           find "$APK_DIR" -name "*.so" -type f | while read so; do
