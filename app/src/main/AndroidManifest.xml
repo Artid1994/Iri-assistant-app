@@ -30,6 +30,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.JARVIS"
         android:hasCode="true"
+        android:extractNativeLibs="true"
         tools:targetApi="35">
 
         <activity

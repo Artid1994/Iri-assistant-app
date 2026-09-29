@@ -17,9 +17,9 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // JNI / Python bridge native library
+        // JNI / Python bridge native library — isolate arm64-v8a for Android 15 16KB page alignment
         ndk {
-            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64")
+            abiFilters += listOf("arm64-v8a")
         }
 
         // Stage 21 model assets
@@ -53,6 +53,13 @@ android {
 
     buildFeatures {
         viewBinding = true
+    }
+
+    // Packaging: use legacy packaging for native library alignment (Android 15 16KB pages)
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
     }
 
     // Stage 21 brain model asset configuration
