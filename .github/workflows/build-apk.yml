@@ -25,30 +25,27 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Accept Android SDK Licenses
+        run: yes | sdkmanager --licenses
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
       - name: Decode Keystore
         if: ${{ env.HAS_KEYSTORE == 'true' }}
         run: |
-          echo "${{ env.KEYSTORE_BASE64 }}" | base64 -d > app/keystore.jks
+          echo "${{ env.KEYSTORE_BASE64 }}" | base64 -d > android/app/keystore.jks
 
       - name: Grant Execute Permission for Gradlew
-        run: chmod +x android/gradlew || chmod +x gradlew
+        run: chmod +x android/gradlew
 
       - name: Build Debug APK
         run: |
-          if [ -f "android/gradlew" ]; then
-            cd android && ./gradlew assembleDebug --no-daemon
-          else
-            ./gradlew assembleDebug --no-daemon
-          fi
+          cd android && ./gradlew assembleDebug --stacktrace --no-daemon
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
-          path: |
-            android/app/build/outputs/apk/debug/*.apk
-            app/build/outputs/apk/debug/*.apk
+          path: android/app/build/outputs/apk/debug/*.apk
           retention-days: 30
