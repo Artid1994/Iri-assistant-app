@@ -57,7 +57,7 @@ android {
 
     // Stage 21 brain model asset configuration
     aaptOptions {
-        noCompress += "bin"
+        noCompress += listOf("bin", "onnx", "tflite", "zip")
     }
 
     // Chaquopy Python configuration
