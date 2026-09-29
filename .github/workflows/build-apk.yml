@@ -100,7 +100,13 @@ jobs:
       - name: Sign patched APK
         working-directory: android
         run: |
-          export PATH="$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | tail -1):$PATH"
+          export PATH="$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | tail -1):$JAVA_HOME/bin:$PATH"
+          # Generate debug keystore if missing
+          if [ ! -f "$ANDROID_HOME/debug.keystore" ]; then
+            keytool -genkey -v -keystore "$ANDROID_HOME/debug.keystore" \
+              -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass android -keypass android -dname "CN=Android Debug,O=Android,C=US"
+          fi
           APK=$(ls app/build/outputs/apk/debug/*.apk | head -1)
           echo "Signing: $APK"
           apksigner sign \
