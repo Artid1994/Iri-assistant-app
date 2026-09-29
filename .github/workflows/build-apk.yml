@@ -77,15 +77,20 @@ jobs:
 
           echo "=== Repacking APK ==="
           # Remove old APK, create new one from patched contents
+          # CRITICAL: resources.arsc and .so files MUST be stored uncompressed (0% compression)
+          # for Android 11+ (API 30+) installation compatibility (adb error -124 fix)
           rm -f "$APK"
           cd "$APK_DIR"
-          zip -r -y "../$APK_DIR.zip" . 2>/dev/null || zip -r "../$APK_DIR.zip" .
+          # Step 1: Store critical files uncompressed
+          zip -q -r -0 "../$APK_DIR.zip" resources.arsc lib/ assets/ 2>/dev/null
+          # Step 2: Add remaining files with normal compression
+          zip -q -r "../$APK_DIR.zip" . -x "resources.arsc" "lib/*" "assets/*" 2>/dev/null
           cd ..
           mv "$APK_DIR.zip" "$APK"
           rm -rf "$APK_DIR"
 
-          echo "=== APK repacked with patched .so files ==="
-          ls -la "$APK"
+          echo "=== Verifying resources.arsc stored uncompressed ==="
+          unzip -l "$APK" | grep resources.arsc
 
       - name: Zipalign patched APK
         working-directory: android
@@ -93,9 +98,12 @@ jobs:
           export PATH="$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | tail -1):$PATH"
           APK=$(ls app/build/outputs/apk/debug/*.apk | head -1)
           echo "Zipaligning: $APK"
+          # -p 4: page-aligned (4-byte) alignment for Android 11+ compatibility
           zipalign -v -p 4 "$APK" app-debug-aligned.apk
           mv app-debug-aligned.apk "$APK"
           echo "Zipaligned APK: $APK"
+          # Verify alignment
+          unzip -l "$APK" | grep -E "resources.arsc|\.so$"
 
       - name: Sign patched APK
         working-directory: android
