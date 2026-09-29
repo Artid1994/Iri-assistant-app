@@ -10,6 +10,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.USE_BUILT_IN_ACCOUNTS_ENABLED" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.BIND_ACCESSIBILITY_SERVICE" />
 
     <!-- Hardware features -->
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
@@ -55,6 +56,19 @@
                 <action android:name="com.jarvis.ae01m.APP_IN_BACKGROUND" />
             </intent-filter>
         </receiver>
+
+        <!-- Accessibility Service for Stage 21 -->
+        <service
+            android:name="com.jarvis.ae01m.bridge.AccessibilityService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
 
     </application>
 </manifest>

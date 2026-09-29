@@ -10,17 +10,17 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # HDC hypervector dimension (must match Kotlin HV_DIM = 10000)
 set(HV_DIM 10000)
 
-# Source files
+# Source files - using correct paths under android/jni/src/
 add_library(jari_bridge SHARED
-    src/jari_bridge.cpp
-    src/hv_encode.cpp
-    src/hv_decode.cpp
-    src/hv_similarity.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/jni/src/jari_bridge.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/jni/src/hv_encode.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/jni/src/hv_decode.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/jni/src/hv_similarity.cpp
 )
 
 # Include directories
 target_include_directories(jari_bridge PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/jni/include
 )
 
 # Link against Android/log for debug output
