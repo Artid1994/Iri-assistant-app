@@ -28,6 +28,11 @@ import java.io.StringWriter
  * - Global uncaught exception handler writes stack traces to crash_log.txt
  * - Python runtime and model loading moved to background IO thread
  * - UI renders immediately; heavy init happens asynchronously
+ *
+ * SAFEGUARDS (this version):
+ * - Entire onCreate body wrapped in try-catch(Throwable) — never crashes on launch
+ * - Heavy Python/Model init deferred until AFTER window focus or explicit user action
+ * - AlertDialog with full stack trace shown on any launch failure
  */
 class MainActivity : ComponentActivity() {
 
@@ -39,23 +44,86 @@ class MainActivity : ComponentActivity() {
     companion object {
         private const val CRASH_LOG_FILENAME = "crash_log.txt"
         private const val MODEL_ASSET = "iri_brain_v6_1m_trained_phase1_phase2.bin"
+        private const val INIT_BUTTON_TEXT = "Initialize AE01M Brain (294MB)"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        // SAFETY WRAP: entire onCreate body in try-catch(Throwable).
+        // If ANY exception occurs during launch, we show a dialog instead of
+        // letting the process die. This prevents the "black screen of death"
+        // that happens when uncaught exceptions hit before the uncaught handler
+        // is installed.
+        try {
+            super.onCreate(savedInstanceState)
+            setContentView(R.layout.activity_main)
 
-        statusText = findViewById(R.id.status_text)
+            statusText = findViewById(R.id.status_text)
 
-        // Set up global uncaught exception handler
-        setupCrashHandler()
+            // Set up global uncaught exception handler FIRST (before any risky work)
+            setupCrashHandler()
 
-        // Show initial UI immediately
-        statusText.text = "AE01M: Initializing..."
+            // Show initial UI immediately — lightweight, safe
+            statusText.text = "AE01M: Tap 'Initialize' to load brain"
 
-        // Initialize Python bridge and HDC engine asynchronously on IO thread
+            // Defer heavy Python/Model initialization until after window focus.
+            // We install a OnWindowFocusChangeListener so the brain only loads
+            // once the UI is safely on-screen and the user can see the button.
+            setContentView(R.layout.activity_main)
+                .setOnClickListener { v ->
+                    // Not used — we use the button approach below
+                }
+        } catch (t: Throwable) {
+            // Critical failure during launch — show full stack trace
+            showLaunchCrashDialog(t)
+            logCrash(t)
+            // Do NOT killProcess here — the dialog is the recovery path.
+            // The global handler will kick in if something else fails later.
+        }
+    }
+
+    /**
+     * Called when the activity's window gains focus. This is the safe point
+     * to start heavy initialization — the UI is guaranteed to be visible and
+     * the user can interact with it.
+     *
+     * We show an "Initialize Brain" button. The user taps it to trigger the
+     * 294MB model load. This avoids blocking the UI thread and gives the user
+     * manual control over when the heavy work starts.
+     */
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus && !isInitializing && pythonBridge == null) {
+            // Attach an initialize button so the user can trigger the heavy load
+            // at their discretion. This prevents the app from appearing frozen.
+            showInitButton()
+        }
+    }
+
+    private fun showInitButton() {
+        // We add a button programmatically below the status text
+        // since the layout may not have one predefined.
+        val button = android.widget.Button(this).apply {
+            text = INIT_BUTTON_TEXT
+            setOnClickListener {
+                startBrainInitialization()
+            }
+        }
+        statusText.parentNode?.let { parent ->
+            if (parent is android.widget.LinearLayout) {
+                parent.addView(button)
+            }
+        }
+    }
+
+    /**
+     * Heavy initialization: load Python bridge (Chaquopy) + HDC engine + 294MB model.
+     * Runs on IO thread — UI remains responsive.
+     */
+    private fun startBrainInitialization() {
+        if (isInitializing) return
+        isInitializing = true
+
         lifecycleScope.launch(Dispatchers.IO) {
-            isInitializing = true
             try {
                 initializePythonBridge()
                 initializeHdcEngine()
@@ -86,8 +154,10 @@ class MainActivity : ComponentActivity() {
 
     private fun initializePythonBridge() {
         pythonBridge = PythonBridge(this)
-        // PythonBridge.init() would call Python.start() via Chaquopy if needed
-        // The model loading happens inside PythonBridge constructor (loadModel())
+        // PythonBridge constructor calls loadJni() (safe, try-catch wrapped).
+        // loadModel() is NOT called here — it's triggered separately if needed.
+        // Chaquopy Python.start() would be called via PythonBridge.startPythonRuntime()
+        // but Chaquopy auto-initializes on first Python API call.
     }
 
     private fun initializeHdcEngine() {
@@ -116,6 +186,39 @@ class MainActivity : ComponentActivity() {
         return Thread.currentThread().name
     }
 
+    /**
+     * Shows a full stack trace dialog for launch crashes.
+     * Called when an exception occurs in onCreate before the UI is fully set up.
+     */
+    private fun showLaunchCrashDialog(throwable: Throwable) {
+        val message = buildString {
+            appendLine("AE01M failed to start.")
+            appendLine()
+            appendLine("Exception: ${throwable.javaClass.simpleName}")
+            appendLine("Message: ${throwable.message}")
+            appendLine()
+            appendLine("Stack trace:")
+            appendLine()
+            val sw = StringWriter()
+            throwable.printStackTrace(PrintWriter(sw))
+            appendLine(sw.toString())
+        }
+
+        // We may not have statusText set up yet — use a bare AlertDialog
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("AE01M Launch Error")
+            .setMessage(message)
+            .setPositiveButton("OK") { _, _ ->
+                finish()
+            }
+            .setCancelable(false)
+            .create()
+        dialog.show()
+    }
+
+    /**
+     * Shows a crash dialog for runtime errors (after UI is set up).
+     */
     private fun showCrashDialog(throwable: Throwable) {
         val message = buildString {
             appendLine("AE01M encountered an error.")
