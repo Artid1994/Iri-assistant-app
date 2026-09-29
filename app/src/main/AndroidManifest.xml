@@ -11,6 +11,9 @@
     <uses-permission android:name="android.permission.USE_BUILT_IN_ACCOUNTS_ENABLED" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.BIND_ACCESSIBILITY_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
     <!-- Hardware features -->
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
@@ -44,7 +47,7 @@
             android:name=".bridge.PythonBridgeService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="dataSync" />
+            android:foregroundServiceType="microphone|specialUse" />
 
         <!-- HDC Cognitive Engine receiver -->
         <receiver

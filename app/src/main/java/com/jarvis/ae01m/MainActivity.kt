@@ -2,10 +2,14 @@ package com.jarvis.ae01m
 
 import android.app.AlertDialog
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.jarvis.ae01m.bridge.PythonBridge
 import com.jarvis.ae01m.hdc.HdcCognitiveEngine
@@ -45,14 +49,16 @@ class MainActivity : ComponentActivity() {
         private const val CRASH_LOG_FILENAME = "crash_log.txt"
         private const val MODEL_ASSET = "iri_brain_v6_1m_trained_phase1_phase2.bin"
         private const val INIT_BUTTON_TEXT = "Initialize AE01M Brain (294MB)"
+
+        // Runtime permission request codes
+        private const val REQUEST_RECORD_AUDIO = 1001
+        private const val REQUEST_POST_NOTIFICATIONS = 1002
     }
+
+    private lateinit var permissionLauncher: androidx.activity.result.ActivityResultLauncher<Array<String>>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // SAFETY WRAP: entire onCreate body in try-catch(Throwable).
-        // If ANY exception occurs during launch, we show a dialog instead of
-        // letting the process die. This prevents the "black screen of death"
-        // that happens when uncaught exceptions hit before the uncaught handler
-        // is installed.
         try {
             super.onCreate(savedInstanceState)
             setContentView(R.layout.activity_main)
@@ -65,19 +71,104 @@ class MainActivity : ComponentActivity() {
             // Show initial UI immediately — lightweight, safe
             statusText.text = "AE01M: Tap 'Initialize' to load brain"
 
+            // Register runtime permission launcher — must be in onCreate
+            registerPermissionLauncher()
+
+            // Request RECORD_AUDIO and POST_NOTIFICATIONS at launch.
+            // Gracefully handle denial — background tasks check permissions before use.
+            requestAudioAndNotificationPermissions()
+
             // Defer heavy Python/Model initialization until after window focus.
-            // We install a OnWindowFocusChangeListener so the brain only loads
-            // once the UI is safely on-screen and the user can see the button.
             setContentView(R.layout.activity_main)
-                .setOnClickListener { v ->
-                    // Not used — we use the button approach below
-                }
+                .setOnClickListener { v -> }
         } catch (t: Throwable) {
-            // Critical failure during launch — show full stack trace
             showLaunchCrashDialog(t)
             logCrash(t)
-            // Do NOT killProcess here — the dialog is the recovery path.
-            // The global handler will kick in if something else fails later.
+        }
+    }
+
+    /**
+     * Register the launcher for runtime permission results.
+     * Uses registerForActivityResult which is lifecycle-aware.
+     */
+    private fun registerPermissionLauncher() {
+        permissionLauncher = registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions()
+        ) { permissions ->
+            val micGranted = permissions[android.Manifest.permission.RECORD_AUDIO] ?: false
+            val notifGranted = permissions[android.Manifest.permission.POST_NOTIFICATIONS] ?: false
+            if (micGranted && notifGranted) {
+                runOnUiThread {
+                    statusText.text = "AE01M: Permissions granted — tap to initialize"
+                }
+            } else {
+                runOnUiThread {
+                    val missing = mutableListOf<String>()
+                    if (!micGranted) missing.add("Microphone")
+                    if (!notifGranted) missing.add("Notifications")
+                    statusText.text = "AE01M: Missing: ${missing.joinToString(", ")}"
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Some permissions denied — features may be limited",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+    }
+
+    /**
+     * Request RECORD_AUDIO and POST_NOTIFICATIONS at app launch.
+     * Checks current grant state first; only prompts if not already granted.
+     * Never crashes if permissions are missing — background tasks handle gracefully.
+     */
+    private fun requestAudioAndNotificationPermissions() {
+        val perms = arrayOf(
+            android.Manifest.permission.RECORD_AUDIO,
+            android.Manifest.permission.POST_NOTIFICATIONS
+        )
+
+        val alreadyGranted = perms.all { perm ->
+            ContextCompat.checkSelfPermission(this, perm) == PackageManager.PERMISSION_GRANTED
+        }
+
+        if (alreadyGranted) {
+            // Both already granted — no prompt needed
+            return
+        }
+
+        // At least one missing — request at runtime
+        try {
+            permissionLauncher.launch(perms)
+        } catch (e: Exception) {
+            // Launcher call failed — log but don't crash. Background tasks
+            // will check permissions again before using mic/notifications.
+            logCrash(e)
+        }
+    }
+
+    /**
+     * Check if microphone permission is granted.
+     * Background tasks call this before accessing the mic.
+     */
+    fun hasMicrophonePermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this, android.Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    /**
+     * Check if notification permission is granted.
+     * Background tasks call this before posting notifications.
+     */
+    fun hasNotificationPermission(): Boolean {
+        return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(
+                this, android.Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            // Pre-Tiramisu: notifications don't require runtime permission
+            true
         }
     }
 
