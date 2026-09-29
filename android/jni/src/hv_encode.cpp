@@ -3,6 +3,7 @@
 
 #include <jni.h>
 #include <android/log.h>
+#include <cstdlib>
 #include <cstdint>
 #include <cstring>
 

@@ -1,5 +1,5 @@
-# Native JNI bridge for Stage 21 HDC model
-# libjari_bridge.so — hypervector encoding/decoding via C++
+// Native JNI bridge for Stage 21 HDC model
+// libjari_bridge.so — hypervector encoding/decoding via C++
 
 #include <jni.h>
 #include <android/log.h>
@@ -12,7 +12,6 @@
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 // Hypervector dimension (must match Kotlin: 10000)
-static const int HV_DIM = 10000;
 
 // Bipolar hypervector: +1.0f or -1.0f
 typedef float hv_t;

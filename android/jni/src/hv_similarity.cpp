@@ -3,6 +3,7 @@
 
 #include <jni.h>
 #include <android/log.h>
+#include <cmath>
 #include <cstdint>
 
 #define LOG_TAG "HDC_Similarity"

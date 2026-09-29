@@ -21,7 +21,7 @@ Java_com_jarvis_ae01m_hdc_HdcCognitiveEngine_decodeHypervector(
     for (int i = 0; i < dim; i++) {
         buf[i] = static_cast<jfloat>(hv[i]);
     }
-    env->ReleaseLongArrayElements(result, buf, 0);
+    env->ReleaseFloatArrayElements(result, buf, 0);
     env->ReleaseLongArrayElements(hypervector, hv, 0);
     return result;
 }
