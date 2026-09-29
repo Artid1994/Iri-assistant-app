@@ -34,18 +34,18 @@ jobs:
       - name: Decode Keystore
         if: ${{ env.HAS_KEYSTORE == 'true' }}
         run: |
-          echo "${{ env.KEYSTORE_BASE64 }}" | base64 -d > android/app/keystore.jks
+          echo "${{ env.KEYSTORE_BASE64 }}" | base64 -d > scaffold/stage21/android/app/keystore.jks
 
       - name: Grant Execute Permission for Gradlew
-        run: chmod +x android/gradlew
+        run: chmod +x scaffold/stage21/android/gradlew
 
       - name: Build Debug APK
-        run: |
-          cd android && ./gradlew assembleDebug --stacktrace --no-daemon
+        working-directory: scaffold/stage21/android
+        run: ./gradlew assembleDebug --stacktrace --no-daemon
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
-          path: android/app/build/outputs/apk/debug/*.apk
+          path: scaffold/stage21/android/app/build/outputs/apk/debug/*.apk
           retention-days: 30
