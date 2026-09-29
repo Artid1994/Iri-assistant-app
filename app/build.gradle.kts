@@ -67,6 +67,19 @@ android {
         noCompress += listOf("bin", "onnx", "tflite", "zip")
     }
 
+    // NDK external build configuration for JNI library
+    externalNativeBuild {
+        cmake {
+            path = file("CMakeLists.txt")
+            // Pass 16KB page size flags to CMake for Android 15 compatibility
+            arguments += listOf(
+                "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON",
+                "-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384",
+                "-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,common-page-size=16384"
+            )
+        }
+    }
+
     // Chaquopy Python configuration
     sourceSets {
         getByName("main") {

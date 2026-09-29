@@ -29,6 +29,10 @@ target_link_libraries(jari_bridge PRIVATE ${log-lib})
 
 # Android 15 / API 35: 16KB page size alignment for native libraries
 # Required for devices with 16KB page size (arm64-v8a with page_size=16384)
+# Global linker flags ensure ALL .so files (including Chaquopy Python libs) are aligned
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,max-page-size=16384")
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,common-page-size=16384")
+
 target_link_options(jari_bridge PRIVATE
     "-Wl,-z,max-page-size=16384"
     "-Wl,-z,common-page-size=16384"
