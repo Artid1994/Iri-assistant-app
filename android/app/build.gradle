@@ -51,11 +51,8 @@ android {
     externalNativeBuild {
         cmake {
             path "CMakeLists.txt"
-            arguments += [
-                "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON",
-                "-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384",
-                "-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,common-page-size=16384"
-            ]
+            arguments "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+            arguments "-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384"
         }
     }
 
