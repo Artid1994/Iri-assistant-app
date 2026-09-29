@@ -41,5 +41,8 @@ target_link_options(jari_bridge PRIVATE
 # Export symbols for JNI
 target_compile_definitions(jari_bridge PRIVATE
     HV_DIM=${HV_DIM}
-    JNIEXPORT=__attribute__((visibility("default")))
+)
+
+target_compile_options(jari_bridge PRIVATE
+    "-DJNIEXPORT=__attribute__((visibility(\"default\")))"
 )
