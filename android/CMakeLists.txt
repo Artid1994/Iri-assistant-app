@@ -27,6 +27,13 @@ target_include_directories(jari_bridge PUBLIC
 find_library(log-lib log)
 target_link_libraries(jari_bridge PRIVATE ${log-lib})
 
+# Android 15 / API 35: 16KB page size alignment for native libraries
+# Required for devices with 16KB page size (arm64-v8a with page_size=16384)
+target_link_options(jari_bridge PRIVATE
+    "-Wl,-z,max-page-size=16384"
+    "-Wl,-z,common-page-size=16384"
+)
+
 # Export symbols for JNI
 target_compile_definitions(jari_bridge PRIVATE
     HV_DIM=${HV_DIM}
