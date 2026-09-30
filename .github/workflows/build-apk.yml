@@ -263,6 +263,20 @@ jobs:
             fi
           fi
 
+          # Pattern 6: adb error -124 / installation failure -> resources.arsc uncompressed
+          if echo "$FAILURE_SIGNATURE" | grep -q "\-124\|installation failed\|INSTALL_FAILED_UPDATE_INCOMPATIBLE\|resources.arsc"; then
+            echo "Pattern matched: adb error -124 / installation failure"
+            echo "Searching for resources.arsc compression fix..."
+            if grep -q "zip -0" .github/workflows/build-apk.yml 2>/dev/null; then
+              echo "RESOLUTION FOUND: resources.arsc already stored uncompressed in workflow."
+            else
+              echo "Applying fix: store resources.arsc uncompressed in re-pack step"
+              # Update the repack step to use zip -0 for resources.arsc and lib/
+              sed -i 's/zip -r -y ".\/\\$APK_DIR.zip" \. 2>\/dev\/null || zip -r ".\/\\$APK_DIR.zip" \./# Store critical files uncompressed\n          zip -q -r -0 ".\/\$APK_DIR.zip" resources.arsc lib\/ assets\/ 2>\/dev\/null\n          zip -q -r ".\/\$APK_DIR.zip" . -x "resources.arsc" "lib\/*" "assets\/*" 2>\/dev\/null/' .github/workflows/build-apk.yml
+              echo "Fix applied: resources.arsc stored uncompressed"
+            fi
+          fi
+
           # ------------------------------------------------------------------
           # STEP 4: If any fix was applied, commit and push to retrigger
           # ------------------------------------------------------------------
